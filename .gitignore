@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Excel temporary files
+~$*.xlsx
+~$*.xls
+
+# Power BI temporary files
+*.pbit.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Sensitive files
+.env
