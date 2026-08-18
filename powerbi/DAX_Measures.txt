@@ -1,0 +1,94 @@
+/*
+Pharma Commercial Sales Analytics — Power BI DAX Measures
+Model:
+  Dim_Date[Date] 1 --> * Fact_DailySales[Date]
+  Dim_Product[Product] can be used as a disconnected product slicer,
+  or Fact_DailySales product columns can be unpivoted in Power Query
+  for a fully normalized product model.
+
+Recommended approach:
+Unpivot M01AB, M01AE, N02BA, N02BE, N05B, N05C, R03, R06 in Power Query
+to create Product and Product Sales columns.
+*/
+
+Total Sales =
+SUM(Fact_DailySales[Total_Sales])
+
+Average Daily Sales =
+AVERAGEX(
+    VALUES(Dim_Date[Date]),
+    [Total Sales]
+)
+
+Sales Days =
+DISTINCTCOUNT(Fact_DailySales[Date])
+
+Top Product =
+VAR ProductTable =
+    UNION(
+        ROW("Product", "M01AB", "Sales", SUM(Fact_DailySales[M01AB])),
+        ROW("Product", "M01AE", "Sales", SUM(Fact_DailySales[M01AE])),
+        ROW("Product", "N02BA", "Sales", SUM(Fact_DailySales[N02BA])),
+        ROW("Product", "N02BE", "Sales", SUM(Fact_DailySales[N02BE])),
+        ROW("Product", "N05B", "Sales", SUM(Fact_DailySales[N05B])),
+        ROW("Product", "N05C", "Sales", SUM(Fact_DailySales[N05C])),
+        ROW("Product", "R03", "Sales", SUM(Fact_DailySales[R03])),
+        ROW("Product", "R06", "Sales", SUM(Fact_DailySales[R06]))
+    )
+RETURN
+    MAXX(TOPN(1, ProductTable, [Sales], DESC), [Product])
+
+Top Product Sales =
+VAR ProductTable =
+    UNION(
+        ROW("Product", "M01AB", "Sales", SUM(Fact_DailySales[M01AB])),
+        ROW("Product", "M01AE", "Sales", SUM(Fact_DailySales[M01AE])),
+        ROW("Product", "N02BA", "Sales", SUM(Fact_DailySales[N02BA])),
+        ROW("Product", "N02BE", "Sales", SUM(Fact_DailySales[N02BE])),
+        ROW("Product", "N05B", "Sales", SUM(Fact_DailySales[N05B])),
+        ROW("Product", "N05C", "Sales", SUM(Fact_DailySales[N05C])),
+        ROW("Product", "R03", "Sales", SUM(Fact_DailySales[R03])),
+        ROW("Product", "R06", "Sales", SUM(Fact_DailySales[R06]))
+    )
+RETURN
+    MAXX(TOPN(1, ProductTable, [Sales], DESC), [Sales])
+
+Sales YoY % =
+VAR CurrentSales = [Total Sales]
+VAR PreviousSales =
+    CALCULATE(
+        [Total Sales],
+        DATEADD(Dim_Date[Date], -1, YEAR)
+    )
+RETURN
+    DIVIDE(CurrentSales - PreviousSales, PreviousSales)
+
+Sales MoM % =
+VAR CurrentSales = [Total Sales]
+VAR PreviousSales =
+    CALCULATE(
+        [Total Sales],
+        DATEADD(Dim_Date[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(CurrentSales - PreviousSales, PreviousSales)
+
+Sales Share % =
+DIVIDE(
+    [Total Sales],
+    CALCULATE([Total Sales], ALL(Dim_Date))
+)
+
+Best Sales Day =
+MAXX(
+    TOPN(
+        1,
+        SUMMARIZE(
+            Fact_DailySales,
+            Fact_DailySales[Date],
+            "DailySales", [Total Sales]
+        ),
+        [DailySales], DESC
+    ),
+    Fact_DailySales[Date]
+)
